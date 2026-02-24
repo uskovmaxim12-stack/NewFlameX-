@@ -1,4 +1,9 @@
 <?php
+$allowed_donats = ['IMPERIAL', 'NETHER', 'SPACE', 'SAMURAI', 'FLAME'];
+if (!in_array(strtoupper($donat), $allowed_donats)) {
+    echo json_encode(['success' => false, 'error' => 'Недопустимый донат']);
+    exit;
+}
 // donate.php — скрипт выдачи доната через RCON
 
 header('Content-Type: application/json');
