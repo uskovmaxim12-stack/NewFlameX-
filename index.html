@@ -558,5 +558,80 @@
       });
     });
   </script>
+  <!-- Модальное окно для оплаты -->
+<div id="donateModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center;">
+  <div style="background:#1e2432; padding:30px; border-radius:30px; max-width:400px; width:90%; border:2px solid #ff9a9e;">
+    <h3 style="color:#ffe066; margin-bottom:15px;">💰 Оформление доната</h3>
+    <p><strong>Донат:</strong> <span id="modalDonatName"></span></p>
+    <p><strong>Сумма:</strong> <span id="modalDonatPrice"></span></p>
+    <p style="margin:15px 0;">Переведи на карту Сбера: <code style="background:#000; padding:5px; border-radius:10px;">1234 5678 9012 3456</code><br>В комментарии укажи свой ник.</p>
+    <input type="text" id="minecraftNick" placeholder="Твой ник в Minecraft" style="width:100%; padding:12px; border-radius:40px; border:none; margin-bottom:15px; background:#2a3040; color:white;">
+    <button id="confirmPaymentBtn" style="background:#ff9a9e; border:none; border-radius:40px; padding:15px; width:100%; font-weight:bold; color:white; cursor:pointer;">✅ Я оплатил, выдать донат</button>
+    <button onclick="closeModal()" style="background:transparent; border:1px solid #666; border-radius:40px; padding:10px; width:100%; margin-top:10px; color:#ccc;">Отмена</button>
+  </div>
+</div>
+
+<script>
+// Функция открытия модалки
+function openDonateModal(donatName, donatPrice) {
+  document.getElementById('modalDonatName').innerText = donatName;
+  document.getElementById('modalDonatPrice').innerText = donatPrice + ' ₽';
+  document.getElementById('donateModal').style.display = 'flex';
+}
+
+// Функция закрытия
+function closeModal() {
+  document.getElementById('donateModal').style.display = 'none';
+}
+
+// Обработчик кнопки подтверждения
+document.getElementById('confirmPaymentBtn').addEventListener('click', function() {
+  const nick = document.getElementById('minecraftNick').value.trim();
+  const donat = document.getElementById('modalDonatName').innerText;
+  if (!nick) {
+    alert('Введи ник!');
+    return;
+  }
+
+  // Блокируем кнопку
+  this.disabled = true;
+  this.innerText = 'Отправка...';
+
+  // AJAX-запрос к donate.php
+  fetch('donate.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nick: nick, donat: donat })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert('✅ Донат выдан! Зайди на сервер и проверь.');
+      closeModal();
+    } else {
+      alert('❌ Ошибка: ' + data.error);
+    }
+  })
+  .catch(err => {
+    alert('Ошибка соединения: ' + err);
+  })
+  .finally(() => {
+    this.disabled = false;
+    this.innerText = '✅ Я оплатил, выдать донат';
+  });
+});
+
+// Привязываем кнопки "Купить" к модалке
+document.querySelectorAll('.donate-btn').forEach((btn, index) => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    // Получаем название доната и цену из карточки
+    const card = btn.closest('.donate-card');
+    const donatName = card.querySelector('.name').innerText;
+    const donatPrice = card.querySelector('.price').innerText;
+    openDonateModal(donatName, donatPrice);
+  });
+});
+</script>
 </body>
 </html>
