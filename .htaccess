@@ -1,4 +1,4 @@
 AuthType Basic
-AuthName "Admin Area"
-AuthUserFile /путь/к/.htpasswd
+AuthName "Admin Panel"
+AuthUserFile /абсолютный/путь/к/.htpasswd
 Require valid-user
