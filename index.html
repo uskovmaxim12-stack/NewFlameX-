@@ -4,11 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <title>NewFlameX — ванильный сервер</title>
-  <!-- Google Font: Montserrat -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
-  <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     * {
@@ -37,7 +35,7 @@
       z-index: 2;
     }
 
-    /* ===== ГЛАВНЫЙ ЭКРАН ===== */
+    /* ===== ГЛАВНЫЙ ЭКРАН С ПОДСВЕТКОЙ ===== */
     .hero {
       text-align: center;
       padding: 30px 0 10px;
@@ -52,14 +50,14 @@
       -webkit-text-fill-color: transparent;
       text-shadow: 0 0 30px rgba(173, 110, 255, 0.8);
       margin-bottom: 20px;
-      animation: glowPulse 3s infinite alternate;
+      animation: neonGlow 2s ease-in-out infinite alternate;
       word-break: break-word;
       line-height: 1.2;
     }
 
-    @keyframes glowPulse {
-      0% { filter: drop-shadow(0 0 20px #ad6eff); }
-      100% { filter: drop-shadow(0 0 50px #ff9a9e); }
+    @keyframes neonGlow {
+      0% { filter: drop-shadow(0 0 15px #ad6eff) drop-shadow(0 0 30px #ff9a9e); }
+      100% { filter: drop-shadow(0 0 30px #ff9a9e) drop-shadow(0 0 60px #ad6eff); }
     }
 
     /* Характеристики */
@@ -470,35 +468,30 @@
     <!-- Донат: 5 позиций с иконками -->
     <h2 class="donate-title">⚡ ДОНАТ ⚡</h2>
     <div class="donate-grid">
-      <!-- Imperial 19 -->
       <div class="donate-card">
         <div class="donate-icon"><i class="fas fa-crown"></i></div>
         <div class="name">IMPERIAL</div>
         <div class="price">19 ₽</div>
         <a class="donate-btn" href="#" data-donat="IMPERIAL" data-price="19">Купить</a>
       </div>
-      <!-- Nether 49 -->
       <div class="donate-card">
         <div class="donate-icon"><i class="fas fa-dragon"></i></div>
         <div class="name">NETHER</div>
         <div class="price">49 ₽</div>
         <a class="donate-btn" href="#" data-donat="NETHER" data-price="49">Купить</a>
       </div>
-      <!-- Space 99 -->
       <div class="donate-card">
         <div class="donate-icon"><i class="fas fa-rocket"></i></div>
         <div class="name">SPACE</div>
         <div class="price">99 ₽</div>
         <a class="donate-btn" href="#" data-donat="SPACE" data-price="99">Купить</a>
       </div>
-      <!-- Samurai 199 -->
       <div class="donate-card">
         <div class="donate-icon"><i class="fas fa-shield-alt"></i></div>
         <div class="name">SAMURAI</div>
         <div class="price">199 ₽</div>
         <a class="donate-btn" href="#" data-donat="SAMURAI" data-price="199">Купить</a>
       </div>
-      <!-- Flame 499 -->
       <div class="donate-card">
         <div class="donate-icon"><i class="fas fa-fire"></i></div>
         <div class="name">FLAME</div>
@@ -536,13 +529,11 @@
       <p><strong>Донат:</strong> <span id="modalDonatName"></span></p>
       <p><strong>Сумма:</strong> <span id="modalDonatPrice"></span> ₽</p>
 
-      <!-- Шаг 1: Ввод ника -->
       <div id="step1">
         <input type="text" id="minecraftNick" placeholder="Твой ник в Minecraft">
         <button id="generateCodeBtn" style="background:#ff9a9e; color:white;">🔑 Получить код для оплаты</button>
       </div>
 
-      <!-- Шаг 2: Код и реквизиты -->
       <div id="step2" style="display:none;">
         <p>Твой уникальный код:</p>
         <div class="code-display" id="paymentCode"></div>
@@ -552,7 +543,6 @@
         <button id="confirmPaymentBtn" style="background:#10b981; color:white;">✅ Я оплатил</button>
       </div>
 
-      <!-- Шаг 3: Заявка отправлена -->
       <div id="step3" style="display:none;">
         <p style="color:#10b981; font-size:1.2rem;">✅ Заявка отправлена!</p>
         <p>Администратор проверит оплату и выдаст донат в ближайшее время.</p>
@@ -580,7 +570,7 @@
       });
     });
 
-    // Модальное окно и логика доната
+    // Модальное окно
     const modal = document.getElementById('donateModal');
     const step1 = document.getElementById('step1');
     const step2 = document.getElementById('step2');
@@ -611,7 +601,6 @@
       modal.style.display = 'none';
     };
 
-    // Привязка к кнопкам "Купить"
     document.querySelectorAll('.donate-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -621,7 +610,6 @@
       });
     });
 
-    // Генерация кода
     generateCodeBtn.addEventListener('click', function() {
       const nick = minecraftNickInput.value.trim();
       if (!nick) {
@@ -660,7 +648,6 @@
       });
     });
 
-    // Подтверждение оплаты
     confirmPaymentBtn.addEventListener('click', function() {
       if (!currentCode) return;
 
@@ -691,7 +678,6 @@
       });
     });
 
-    // Закрытие модалки по клику вне её
     window.addEventListener('click', (e) => {
       if (e.target === modal) closeModal();
     });
