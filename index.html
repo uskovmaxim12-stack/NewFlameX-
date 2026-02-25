@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <title>NewFlameX — ванильный сервер</title>
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     * {
@@ -413,6 +415,10 @@
       font-size: 1rem;
     }
 
+    .modal input::placeholder {
+      color: #9ca3af;
+    }
+
     .modal button {
       width: 100%;
       padding: 15px;
@@ -443,6 +449,13 @@
 
     .modal .close-btn:hover {
       background: #333;
+    }
+
+    .error-message {
+      color: #ff6b6b;
+      font-size: 0.9rem;
+      margin-top: -10px;
+      margin-bottom: 10px;
     }
   </style>
 </head>
@@ -530,7 +543,12 @@
       <p><strong>Сумма:</strong> <span id="modalDonatPrice"></span> ₽</p>
 
       <div id="step1">
-        <input type="text" id="minecraftNick" placeholder="Твой ник в Minecraft">
+        <!-- Поля для данных пользователя -->
+        <input type="text" id="minecraftNick" placeholder="Твой ник в Minecraft" required>
+        <input type="email" id="userEmail" placeholder="Email (для связи)" required>
+        <input type="tel" id="userPhone" placeholder="Номер телефона (для связи)" required>
+        <input type="text" id="userTelegram" placeholder="Telegram username (например @nick)" required>
+        <div id="step1Error" class="error-message"></div>
         <button id="generateCodeBtn" style="background:#ff9a9e; color:white;">🔑 Получить код для оплаты</button>
       </div>
 
@@ -540,12 +558,14 @@
         <p>Переведи <span id="amountDisplay"></span> ₽ на карту Сбера:</p>
         <p><code style="background:#000; padding:5px; border-radius:10px;">1234 5678 9012 3456</code></p>
         <p style="color:#ff9a9e;">Обязательно укажи код в комментарии к переводу!</p>
-        <button id="confirmPaymentBtn" style="background:#10b981; color:white;">✅ Я оплатил</button>
+        <button id="sendToTelegramBtn" style="background:#10b981; color:white;">📤 Отправить уведомление в Telegram</button>
       </div>
 
       <div id="step3" style="display:none;">
-        <p style="color:#10b981; font-size:1.2rem;">✅ Заявка отправлена!</p>
-        <p>Администратор проверит оплату и выдаст донат в ближайшее время.</p>
+        <p style="color:#10b981; font-size:1.2rem;">✅ Сообщение готово!</p>
+        <p>Нажми «Отправить» в Telegram, чтобы уведомить администратора.</p>
+        <p style="font-size:0.9rem;">Если Telegram не открылся, скопируй код и напиши админу вручную.</p>
+        <button id="openTelegramBtn" style="background:#29a9e0; color:white;">📱 Открыть Telegram</button>
       </div>
 
       <button class="close-btn" onclick="closeModal()">Закрыть</button>
@@ -579,12 +599,18 @@
     const modalDonatPrice = document.getElementById('modalDonatPrice');
     const amountDisplay = document.getElementById('amountDisplay');
     const paymentCodeSpan = document.getElementById('paymentCode');
-    const minecraftNickInput = document.getElementById('minecraftNick');
+    const minecraftNick = document.getElementById('minecraftNick');
+    const userEmail = document.getElementById('userEmail');
+    const userPhone = document.getElementById('userPhone');
+    const userTelegram = document.getElementById('userTelegram');
     const generateCodeBtn = document.getElementById('generateCodeBtn');
-    const confirmPaymentBtn = document.getElementById('confirmPaymentBtn');
+    const sendToTelegramBtn = document.getElementById('sendToTelegramBtn');
+    const openTelegramBtn = document.getElementById('openTelegramBtn');
+    const step1Error = document.getElementById('step1Error');
 
     let currentDonat = { name: '', price: 0 };
     let currentCode = '';
+    let currentUserData = {};
 
     function openModal(name, price) {
       currentDonat = { name, price };
@@ -595,6 +621,12 @@
       step2.style.display = 'none';
       step3.style.display = 'none';
       modal.style.display = 'flex';
+      // Очистка полей
+      minecraftNick.value = '';
+      userEmail.value = '';
+      userPhone.value = '';
+      userTelegram.value = '';
+      step1Error.innerText = '';
     }
 
     window.closeModal = function() {
@@ -610,72 +642,76 @@
       });
     });
 
+    // Валидация полей
+    function validateFields() {
+      const nick = minecraftNick.value.trim();
+      const email = userEmail.value.trim();
+      const phone = userPhone.value.trim();
+      const tg = userTelegram.value.trim();
+
+      if (!nick) return 'Введи ник в Minecraft';
+      if (!email) return 'Введи email';
+      if (!email.includes('@') || !email.includes('.')) return 'Введи корректный email';
+      if (!phone) return 'Введи номер телефона';
+      if (!/^[\d\+\-\(\)\s]+$/.test(phone)) return 'Телефон содержит только цифры, +, -, пробелы';
+      if (!tg) return 'Введи Telegram username';
+      if (!tg.startsWith('@')) return 'Telegram username должен начинаться с @';
+      return null;
+    }
+
+    // Генерация кода (чистый JS)
     generateCodeBtn.addEventListener('click', function() {
-      const nick = minecraftNickInput.value.trim();
-      if (!nick) {
-        alert('Введи ник!');
+      const error = validateFields();
+      if (error) {
+        step1Error.innerText = error;
         return;
       }
+      step1Error.innerText = '';
 
-      this.disabled = true;
-      this.innerText = 'Генерация...';
+      currentUserData = {
+        nick: minecraftNick.value.trim(),
+        email: userEmail.value.trim(),
+        phone: userPhone.value.trim(),
+        tg: userTelegram.value.trim()
+      };
 
-      fetch('donate.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          action: 'generate',
-          nickname: nick,
-          donat_name: currentDonat.name,
-          amount: currentDonat.price
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          currentCode = data.code;
-          paymentCodeSpan.innerText = currentCode;
-          step1.style.display = 'none';
-          step2.style.display = 'block';
-        } else {
-          alert('Ошибка: ' + data.error);
-        }
-      })
-      .catch(err => alert('Ошибка соединения: ' + err))
-      .finally(() => {
-        this.disabled = false;
-        this.innerText = '🔑 Получить код для оплаты';
-      });
+      // Генерируем уникальный код (NFX + 6 случайных символов)
+      const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
+      currentCode = 'NFX-' + randomPart;
+
+      paymentCodeSpan.innerText = currentCode;
+      step1.style.display = 'none';
+      step2.style.display = 'block';
     });
 
-    confirmPaymentBtn.addEventListener('click', function() {
-      if (!currentCode) return;
+    // Подготовка сообщения для Telegram
+    function getTelegramMessage() {
+      return encodeURIComponent(
+        `💰 НОВАЯ ЗАЯВКА НА ДОНАТ\n\n` +
+        `🎁 Донат: ${currentDonat.name}\n` +
+        `💵 Сумма: ${currentDonat.price} руб.\n` +
+        `🔑 Код платежа: ${currentCode}\n\n` +
+        `👤 Данные игрока:\n` +
+        `🆔 Ник: ${currentUserData.nick}\n` +
+        `📧 Email: ${currentUserData.email}\n` +
+        `📞 Телефон: ${currentUserData.phone}\n` +
+        `📱 Telegram: ${currentUserData.tg}\n\n` +
+        `Проверь поступление денег с этим кодом и выдай донат.`
+      );
+    }
 
-      this.disabled = true;
-      this.innerText = 'Отправка...';
+    // Кнопка "Отправить уведомление в Telegram" (переход к шагу 3)
+    sendToTelegramBtn.addEventListener('click', function() {
+      step2.style.display = 'none';
+      step3.style.display = 'block';
+    });
 
-      fetch('donate.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          action: 'confirm',
-          code: currentCode
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          step2.style.display = 'none';
-          step3.style.display = 'block';
-        } else {
-          alert('Ошибка: ' + data.error);
-        }
-      })
-      .catch(err => alert('Ошибка соединения: ' + err))
-      .finally(() => {
-        this.disabled = false;
-        this.innerText = '✅ Я оплатил';
-      });
+    // Кнопка "Открыть Telegram" с готовым сообщением
+    openTelegramBtn.addEventListener('click', function() {
+      const message = getTelegramMessage();
+      // Используем https://t.me/ivanShege?text=... (замени на нужный username)
+      const tgUrl = `https://t.me/IvanShege?text=${message}`;
+      window.open(tgUrl, '_blank');
     });
 
     window.addEventListener('click', (e) => {
